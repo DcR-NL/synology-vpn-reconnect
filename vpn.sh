@@ -1,5 +1,5 @@
 #!/bin/bash 
-#Version 0.6 - BakedPizza
+#Version 0.6.1 - BakedPizza
 #Updates and instructions: https://forum.synology.com/enu/viewtopic.php?f=39&t=65444&start=45#p459096
 domain="example.com"
 syn_conf_id="o1234567890"
@@ -44,7 +44,7 @@ function vpn_check_http_status {
 		curl -o /dev/null --connect-timeout "$timeout_seconds" --silent --head --write-out %{http_code} "${http_code_check_urls[i]}" | grep -Fxq "200"
 		if [ $? -eq 0 ]; then
 			break
-		elif [ $i -eq $((${#ArrayName[@]} - 1)) ]; then
+		elif [ $i -eq $((${#http_code_check_urls[@]} - 1)) ]; then
 			vpn_reconnect "Not allowed to connect to any of the specified URLs"
 		else
 			echo 'VPN check: VPN not allowed to connect to URL: '${http_code_check_urls[i]}
