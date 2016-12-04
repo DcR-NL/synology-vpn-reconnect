@@ -57,9 +57,9 @@ then
 					fi
 				done
 				if $one_http_ok; then
-					echo 'VPN check: VPN allowed to connect to atleast one of the specified URLs'
+					echo 'VPN check: VPN allowed to connect to at least one of the specified URLs'
 				else
-					reconnect "Not allowed to connect to all the specified URLs"
+					reconnect "Not allowed to connect to all of the specified URLs"
 				fi
 			else
 				reconnect "The remote IP equals current IP"
