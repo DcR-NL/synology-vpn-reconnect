@@ -1,5 +1,5 @@
 #!/bin/bash 
-#Version 0.5 - BakedPizza
+#Version 0.5.1 - BakedPizza
 #Updates and instructions: https://forum.synology.com/enu/viewtopic.php?f=39&t=65444&start=45#p459096
 domain="example.com"
 syn_conf_id="o1234567890"
@@ -28,8 +28,7 @@ function reconnect {
 
 echo 'VPN check: Start'
 
-if echo $(ifconfig tun0) | grep -q "00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00"
-then
+if echo $(ifconfig tun0) | grep -q "00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00"; then
 	echo 'VPN check: tun0 is up'
 	current_remote_ip=$(curl --connect-timeout "$timeout_seconds" -s https://ipinfo.io/ip)
 	echo 'VPN check: Grabbed current remote:' $current_remote_ip
@@ -59,7 +58,7 @@ then
 				if $one_http_ok; then
 					echo 'VPN check: VPN allowed to connect to at least one of the specified URLs'
 				else
-					reconnect "Not allowed to connect to all of the specified URLs"
+					reconnect "Not allowed to connect to all the specified URLs"
 				fi
 			else
 				reconnect "The remote IP equals current IP"
