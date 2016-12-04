@@ -1,12 +1,13 @@
 #!/bin/bash 
-#Version 0.6.1 - BakedPizza
+#Version 0.7 - BakedPizza
 #Updates and instructions: https://forum.synology.com/enu/viewtopic.php?f=39&t=65444&start=45#p459096
 domain="example.com"
 syn_conf_id="o1234567890"
 syn_conf_name="foobar"
 syn_protocol="openvpn"
 timeout_seconds="10"
-http_code_check_urls=("https://example.com/" "https://example.org/")
+http_status_check_urls=("https://example.com/" "https://example.org/")
+http_status_check_accepted_codes=("200")
 
 function vpn_check_tun0 {
 	ifconfig tun0 | grep -q "00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00"
@@ -40,14 +41,23 @@ function vpn_check_ip {
 }
 
 function vpn_check_http_status {
-	for i in "${!http_code_check_urls[@]}";do
-		curl -o /dev/null --connect-timeout "$timeout_seconds" --silent --head --write-out %{http_code} "${http_code_check_urls[i]}" | grep -Fxq "200"
+	grep_arguments=''
+	if [ ${#http_status_check_accepted_codes[@]} -eq 0 ]; then
+		grep_arguments+=' -e 200'
+	else
+		for status_code in "${http_status_check_accepted_codes[@]}";do
+			grep_arguments+=' -e '$status_code
+		done
+	fi
+	
+	for i in "${!http_status_check_urls[@]}";do
+		curl -o /dev/null --connect-timeout "$timeout_seconds" --silent --head --write-out %{http_code} "${http_status_check_urls[i]}" | grep -Fxq $grep_arguments
 		if [ $? -eq 0 ]; then
 			break
-		elif [ $i -eq $((${#http_code_check_urls[@]} - 1)) ]; then
+		elif [ $i -eq $((${#http_status_check_urls[@]} - 1)) ]; then
 			vpn_reconnect "Not allowed to connect to any of the specified URLs"
 		else
-			echo 'VPN check: VPN not allowed to connect to URL: '${http_code_check_urls[i]}
+			echo 'VPN check: VPN not allowed to connect to URL: '${http_status_check_urls[i]}
 		fi
 	done
 }
