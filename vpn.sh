@@ -1,5 +1,5 @@
 #!/bin/bash 
-#Version 0.4 - BakedPizza
+#Version 0.5 - BakedPizza
 #Updates and instructions: https://forum.synology.com/enu/viewtopic.php?f=39&t=65444&start=45#p459096
 domain="example.com"
 syn_conf_id="o1234567890"
