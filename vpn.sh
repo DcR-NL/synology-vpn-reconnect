@@ -23,7 +23,7 @@ function vpn_check_ip {
 		current_remote_ip=$(curl --connect-timeout "$timeout_seconds" -s https://ipinfo.io/ip)
 		real_remote_ip=$(nslookup -timeout="$timeout_seconds" "$domain" | awk '/^Address: / { print $2 ; exit }')
 		sudo ipcalc -s "$current_remote_ip"
-		if [ "$?" -eq 255 ]; then  # TODO: Why does it return 255 when confronted with a valid IP? Why does it return bad IP while using the -p parameter? :/
+		if [ "$?" -eq 255 ]; then  # TODO: Why does it return 255 when confronted with a valid IP? Why does it return bad IP while using the -s parameter? :/
 		  sudo ipcalc -s "$real_remote_ip"
 		  if [ "$?" -eq 255 ]; then
 			if [[ "$current_remote_ip" != "$real_remote_ip" ]]; then
