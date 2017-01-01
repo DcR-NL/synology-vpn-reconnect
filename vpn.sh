@@ -1,5 +1,5 @@
 #!/bin/bash 
-#Version 0.9.0 - BakedPizza
+#Version 0.9.1 - BakedPizza
 #Updates and instructions: https://forum.synology.com/enu/viewtopic.php?f=39&t=65444&start=45#p459096
 domain="example.com"
 syn_conf_id="o1234567890"
@@ -16,12 +16,18 @@ test_run=false
 function script_log_to_file {
 	if [ "$log_to_file" = true ]; then
 		script_log_info 'Log to file has been enabled (this line is not logged to the file)'
-		touch $log_filename
-		log_size_bytes=$(stat --printf="%s" "$log_filename")
-		if [ "$log_size_bytes" -gt "$log_size_limit_bytes" ]; then
-			echo "[INFO] VPN check: log purged because it exceeded $log_size_limit_bytes bytes" | tee $log_filename
+		if [ -L $0 ] ; then
+			script_location=$(readlink $0)
+		else
+			script_location=$0
 		fi
-		exec &> >(tee -a "$log_filename")
+		log_location=$(dirname $script_location)'/'$log_filename
+		touch $log_location
+		log_size_bytes=$(stat --printf="%s" "$log_location")
+		if [ "$log_size_bytes" -gt "$log_size_limit_bytes" ]; then
+			echo "[INFO] VPN check: log purged because it exceeded $log_size_limit_bytes bytes" | tee $log_location
+		fi
+		exec &> >(tee -a "$log_location")
 		exec 2>&1
 	else
 		script_log_info 'Log to file has been disabled'
