@@ -1,5 +1,5 @@
 #!/bin/bash 
-#Version 0.8.1 - BakedPizza
+#Version 0.9.0 - BakedPizza
 #Updates and instructions: https://forum.synology.com/enu/viewtopic.php?f=39&t=65444&start=45#p459096
 domain="example.com"
 syn_conf_id="o1234567890"
@@ -8,6 +8,25 @@ syn_protocol="openvpn"
 timeout_seconds="10"
 http_status_check_urls=("https://example.com/" "https://example.org/")
 http_status_check_accepted_codes=("200")
+log_to_file=true
+log_filename=vpn.log
+log_size_limit_bytes=500000
+test_run=false
+
+function script_log_to_file {
+	if [ "$log_to_file" = true ]; then
+		script_log_info 'Log to file has been enabled (this line is not logged to the file)'
+		touch $log_filename
+		log_size_bytes=$(stat --printf="%s" "$log_filename")
+		if [ "$log_size_bytes" -gt "$log_size_limit_bytes" ]; then
+			echo "[INFO] VPN check: log purged because it exceeded $log_size_limit_bytes bytes" | tee $log_filename
+		fi
+		exec &> >(tee -a "$log_filename")
+		exec 2>&1
+	else
+		script_log_info 'Log to file has been disabled'
+	fi
+}
 
 function script_check_sudo {
 	uid=$(sudo sh -c 'echo $UID')
@@ -18,7 +37,6 @@ function script_check_sudo {
 		script_exit
 	fi
 }
-
 
 function vpn_check_tun0 {
 	ifconfig tun0 | grep -q "00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00"
@@ -85,7 +103,7 @@ function vpn_check_http_status {
 }
 
 function vpn_reconnect {
-	log_message='VPN is reconnecting'
+	log_message='VPN needs to be reconnected'
 	if [ -z "$1" ]; then
 		log_message+=' without known cause.'
 	else
@@ -93,6 +111,11 @@ function vpn_reconnect {
 	fi
 	
 	script_log_warn "$log_message"
+	
+	if [ "$test_run" = true ]; then
+		script_log_warn 'Test run is enabled; will not reconnect the VPN!'
+		script_exit
+	fi
 	
 	sudo /usr/syno/bin/synovpnc kill_client
 	sudo tee /usr/syno/etc/synovpnclient/vpnc_connecting > /dev/null <<-EOF
@@ -130,6 +153,7 @@ function script_exit {
 	exit 0
 }
 
+script_log_to_file
 script_log_info 'Start ['"`date +%Y-%m-%d\ %H:%M:%S\ %:::z`"']'
 script_check_sudo
 vpn_check_tun0
