@@ -1,5 +1,5 @@
 #!/bin/bash 
-#Version 0.8 - BakedPizza
+#Version 0.8.1 - BakedPizza
 #Updates and instructions: https://forum.synology.com/enu/viewtopic.php?f=39&t=65444&start=45#p459096
 domain="example.com"
 syn_conf_id="o1234567890"
@@ -9,10 +9,21 @@ timeout_seconds="10"
 http_status_check_urls=("https://example.com/" "https://example.org/")
 http_status_check_accepted_codes=("200")
 
+function script_check_sudo {
+	uid=$(sudo sh -c 'echo $UID')
+	if [ "$uid" -eq 0 ]; then
+		script_log_info 'Running with user with sufficient privileges'
+	else
+		script_log_error 'You need to run this script with an sudo-enabled user (by default: "admin")'
+		script_exit
+	fi
+}
+
+
 function vpn_check_tun0 {
 	ifconfig tun0 | grep -q "00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00"
 	if [ "$?" -eq 0 ]; then
-		log_info 'Interface tun0 is up'
+		script_log_info 'Interface tun0 is up'
 	else
 		vpn_reconnect "Interface tun0 is down"
 	fi
@@ -23,11 +34,11 @@ function vpn_check_ip {
 		current_remote_ip=$(curl --connect-timeout "$timeout_seconds" -s https://ipinfo.io/ip)
 		real_remote_ip=$(nslookup -timeout="$timeout_seconds" "$domain" | awk '/^Address: / { print $2 ; exit }')
 		sudo ipcalc -s "$current_remote_ip"
-		if [ "$?" -eq 255 ]; then  # TODO: Why does it return 255 when confronted with a valid IP? Why does it return bad IP while using the -s parameter? :/
+		if [ "$?" -eq 255 ]; then  # TODO: Why does it return 255 when confronted with a valid IP? Why does it return bad IP while using the -p parameter? :/
 		  sudo ipcalc -s "$real_remote_ip"
 		  if [ "$?" -eq 255 ]; then
 			if [[ "$current_remote_ip" != "$real_remote_ip" ]]; then
-				log_info 'Remote IP is different from the domain IP'
+				script_log_info 'Remote IP is different from the domain IP'
 			else
 				vpn_reconnect "The current remote IP is indentical to the real remote IP"
 			fi
@@ -38,7 +49,7 @@ function vpn_check_ip {
 		  vpn_reconnect "The received current remote IP is invalid. Timeout?"
 		fi
 	else
-		log_warn 'Skipping IP check; no domain defined'
+		script_log_warn 'Skipping IP check; no domain defined'
 	fi
 }
 
@@ -46,7 +57,7 @@ function vpn_check_http_status {
 	if [ "${#http_status_check_urls[@]}" -gt 0 ]; then
 		grep_arguments=''
 		if [ "${#http_status_check_accepted_codes[@]}" -eq 0 ]; then
-			log_info 'No HTTP status codes defined; assuming status 200'
+			script_log_info 'No HTTP status codes defined; assuming status 200'
 			grep_arguments+=' -e 200'
 		else
 			for status_code in "${http_status_check_accepted_codes[@]}";do
@@ -58,10 +69,10 @@ function vpn_check_http_status {
 			curl -o /dev/null --connect-timeout "$timeout_seconds" --silent --head --write-out %{http_code} "$random_url" | grep -Fxq $grep_arguments
 			last_exit_code="$?"
 			if [ "$last_exit_code" -eq 0 ]; then
-				log_info 'VPN allowed to connect to at least one of the specified URLs'
+				script_log_info 'VPN allowed to connect to at least one of the specified URLs'
 				break
 			else
-				log_info 'VPN not allowed to connect to URL: '$random_url
+				script_log_info 'VPN not allowed to connect to URL: '$random_url
 			fi
 		done < <(shuf -e ${http_status_check_urls[@]})
 		
@@ -69,7 +80,7 @@ function vpn_check_http_status {
 			vpn_reconnect "Not allowed to connect to any of the specified URLs"		
 		fi
 	else
-		log_warn 'Skipping HTTP status check; no URLs defined'
+		script_log_warn 'Skipping HTTP status check; no URLs defined'
 	fi
 }
 
@@ -81,7 +92,7 @@ function vpn_reconnect {
 		log_message+='. Cause: "'$1'"'
 	fi
 	
-	log_warn "$log_message"
+	script_log_warn "$log_message"
 	
 	sudo /usr/syno/bin/synovpnc kill_client
 	sudo tee /usr/syno/etc/synovpnclient/vpnc_connecting > /dev/null <<-EOF
@@ -92,25 +103,36 @@ function vpn_reconnect {
 	sudo /usr/syno/bin/synovpnc reconnect --protocol="$syn_protocol" --name="$syn_conf_name"
 	reconnect_status_code="$?"
 	
-	log_info 'End'
+	script_log_info 'End'
 	exit "$reconnect_status_code"
 }
 
-function log_warn {
+function script_log_error {
+	if [ -n "$1" ]; then
+		echo '[ERROR] VPN check: '$1
+	fi
+}
+
+function script_log_warn {
 	if [ -n "$1" ]; then
 		echo '[WARN] VPN check: '$1
 	fi
 }
 
-function log_info {
+function script_log_info {
 	if [ -n "$1" ]; then
 		echo '[INFO] VPN check: '$1
 	fi
 }
 
-log_info 'Start ['"`date +%Y-%m-%d\ %H:%M:%S\ %:::z`"']'
+function script_exit {
+	script_log_info 'End'
+	exit 0
+}
+
+script_log_info 'Start ['"`date +%Y-%m-%d\ %H:%M:%S\ %:::z`"']'
+script_check_sudo
 vpn_check_tun0
 vpn_check_ip
 vpn_check_http_status
-log_info 'End'
-exit 0
+script_exit
