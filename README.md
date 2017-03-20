@@ -5,3 +5,8 @@ This script works fine with sudo-enabled users (admin by default) from the comma
 
 ## Instructions and changelog
 See detailed instructions in the [wiki](https://github.com/DcR-NL/synology-vpn-reconnect/wiki)
+
+## Issues or improvements?
+Got an issue with this script and the [wiki](https://github.com/DcR-NL/synology-vpn-reconnect/wiki) doesn't contain the required information to solve your problem? Please create a new issue report.
+
+Since I'm new to Bash scripting you might locate some possible improvements. If you do, please don't hesitate to create an issue and/or create a pull-request.
