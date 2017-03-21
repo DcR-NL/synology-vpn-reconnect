@@ -1,6 +1,6 @@
 #!/bin/bash 
-#Version 0.9.2 - BakedPizza
-#Updates and instructions: https://forum.synology.com/enu/viewtopic.php?f=39&t=65444&start=45#p459096
+#Version 0.9.2.1
+#Updates and instructions: https://github.com/DcR-NL/synology-vpn-reconnect
 domain="example.com"
 syn_conf_id="o1234567890"
 syn_conf_name="foobar"
