@@ -1,3 +1,5 @@
+### Archived! I recommend looking at [Gluetun](https://github.com/qdm12/gluetun) if you are able to run Docker. It does a much better job at handling a VPN. ###
+
 # Synology VPN Reconnect Script
 I noticed my VPN sometimes stopped responding (403 errors outbound, etc). So I made a 'simple' bash script. This script is tested on DSM 6.0.2-8451 Update 4 in combination with the OpenVPN protocol, but should also work on DSM 6.1+.
 
